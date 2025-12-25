@@ -37,17 +37,7 @@ export type DataTableProps<T> = {
 	columns: ColumnDef<T>[];
 	/** Array of row data to display */
 	data: T[];
-	/** Total count of records (for pagination) */
-	totalCount: number;
-	/** Current page number (1-indexed) */
-	page: number;
-	/** Number of items per page */
-	pageSize: number;
-	/** Column key to sort by (must be a valid key from T) */
-	sortBy?: keyof T & string;
-	/** Sort direction */
-	sortOrder?: "asc" | "desc";
-	/** Search query string */
+	/** Search query string (used for empty state message) */
 	search?: string;
 };
 
@@ -136,4 +126,6 @@ export type TablePaginationProps = {
 export type SearchInputProps = {
 	/** Initial search value from URL */
 	initialValue?: string;
+	/** Placeholder text for the search input */
+	placeholder?: string;
 };

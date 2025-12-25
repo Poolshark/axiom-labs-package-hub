@@ -17,5 +17,23 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.10",
 		"@types/bun": "latest"
+	},
+	"main": "./packages/convex-table/dist/index.cjs",
+	"module": "./packages/convex-table/dist/index.mjs",
+	"types": "./packages/convex-table/dist/index.d.cts",
+	"exports": {
+		".": {
+			"require": "./packages/convex-table/dist/index.cjs",
+			"import": "./packages/convex-table/dist/index.mjs"
+		},
+		"./next": {
+			"require": "./packages/convex-table/dist/next.cjs",
+			"import": "./packages/convex-table/dist/next.mjs"
+		},
+		"./react": {
+			"require": "./packages/convex-table/dist/react.cjs",
+			"import": "./packages/convex-table/dist/react.mjs"
+		},
+		"./package.json": "./package.json"
 	}
 }

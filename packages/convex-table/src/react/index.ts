@@ -1,3 +1,5 @@
+"use client";
+
 // React-specific components
 
 // Re-export shared types

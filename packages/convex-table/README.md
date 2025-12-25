@@ -174,7 +174,7 @@ import { DataTable } from '@axiom-labs/convex-table';
 import { SearchInput, TableHeader, TablePagination } from '@axiom-labs/convex-table/react';
 import type { ColumnDef } from '@axiom-labs/convex-table';
 
-interface User {
+interface User extends Record<string, unknown> {
   id: string;
   name: string;
   email: string;
@@ -225,14 +225,9 @@ export function UsersTable({ users }: { users: User[] }) {
         placeholder="Search users..."
       />
       
-      <DataTable
+      <DataTable<User>
         columns={columns}
         data={paginatedData}
-        totalCount={sortedData.length}
-        page={page}
-        pageSize={pageSize}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
       />
       
       <TablePagination
@@ -254,7 +249,7 @@ import { DataTable } from '@axiom-labs/convex-table';
 import { SearchInput, TableHeader, TablePagination, useTableState } from '@axiom-labs/convex-table/react';
 import type { ColumnDef } from '@axiom-labs/convex-table';
 
-interface Product {
+interface Product extends Record<string, unknown> {
   id: string;
   name: string;
   price: number;
@@ -307,14 +302,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
         placeholder="Search products..."
       />
       
-      <DataTable
+      <DataTable<Product>
         columns={columns}
         data={paginatedData}
-        totalCount={sortedData.length}
-        page={state.page}
-        pageSize={state.pageSize}
-        sortBy={state.sortBy}
-        sortOrder={state.sortOrder}
       />
       
       <TablePagination
@@ -336,6 +326,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import { DataTable } from '@axiom-labs/convex-table';
 import { SearchInput, TablePagination } from '@axiom-labs/convex-table/react';
 import { setPage, setSearch, setSort } from './store/tableSlice';
+import type { ColumnDef } from '@axiom-labs/convex-table';
+
+interface TableRow extends Record<string, unknown> {
+  id: string;
+  // Add your data fields here
+}
+
+const columns: ColumnDef<TableRow>[] = [
+  // Define your columns
+];
 
 export function ReduxTable() {
   const dispatch = useDispatch();
@@ -350,14 +350,9 @@ export function ReduxTable() {
         onChange={(value) => dispatch(setSearch(value))}
       />
       
-      <DataTable
+      <DataTable<TableRow>
         columns={columns}
         data={data}
-        totalCount={totalCount}
-        page={page}
-        pageSize={pageSize}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
       />
       
       <TablePagination
@@ -379,7 +374,7 @@ import { DataTable } from '@axiom-labs/convex-table';
 import { SearchInput, TablePagination } from '@axiom-labs/convex-table/next';
 import type { ColumnDef } from '@axiom-labs/convex-table';
 
-interface User {
+interface User extends Record<string, unknown> {
   id: string;
   name: string;
   email: string;
@@ -411,14 +406,9 @@ export default function UsersPage({
     <div className="space-y-4">
       <SearchInput placeholder="Search users..." />
       
-      <DataTable
+      <DataTable<User>
         columns={columns}
         data={users.data}
-        totalCount={users.totalCount}
-        page={page}
-        pageSize={pageSize}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
         search={search}
       />
       
@@ -436,33 +426,73 @@ export default function UsersPage({
 
 ```tsx
 // app/products/page.tsx
-'use client';
-
-import { useQuery } from 'convex/react';
+import { fetchQuery } from 'convex/nextjs';
 import { api } from '@/convex/_generated/api';
 import { DataTable } from '@axiom-labs/convex-table';
-import { SearchInput, TablePagination, useTableState } from '@axiom-labs/convex-table/next';
+import { SearchInput, TablePagination } from '@axiom-labs/convex-table/next';
 import type { ColumnDef } from '@axiom-labs/convex-table';
 
-interface Product {
+interface Product extends Record<string, unknown> {
   _id: string;
   name: string;
   price: number;
   stock: number;
 }
 
-export default function ProductsPage() {
-  // useTableState reads from URL and updates URL on changes
-  const { state } = useTableState();
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    pageSize?: string;
+    search?: string;
+  }>;
+}) {
+  const params = await searchParams;
+  const page = Number(params.page) || 1;
+  const pageSize = Number(params.pageSize) || 10;
+  const search = params.search || '';
 
-  // Query Convex with table state
-  const result = useQuery(api.products.list, {
-    page: state.page,
-    pageSize: state.pageSize,
-    sortBy: state.sortBy,
-    sortOrder: state.sortOrder,
-    search: state.search,
+  // Fetch data from Convex using search index and pagination
+  const result = await fetchQuery(api.products.list, {
+    paginationOpts: {
+      numItems: pageSize,
+      cursor: null, // For page-based UI, we fetch from start each time
+    },
+    search: search || undefined,
   });
+
+  // For page-based pagination, we need to slice the results
+  // Note: This fetches all pages up to current page
+  // For better performance with large datasets, consider using cursor-based "Load More" UI
+  const allItems: Product[] = [];
+  let currentResult = result;
+  
+  // Fetch pages until we have enough data for the current page
+  while (allItems.length < page * pageSize && currentResult.page.length > 0) {
+    allItems.push(...currentResult.page);
+    
+    if (currentResult.isDone || allItems.length >= page * pageSize) {
+      break;
+    }
+    
+    // Fetch next page if needed
+    if (currentResult.continueCursor) {
+      currentResult = await fetchQuery(api.products.list, {
+        paginationOpts: {
+          numItems: pageSize,
+          cursor: currentResult.continueCursor,
+        },
+        search: search || undefined,
+      });
+    } else {
+      break;
+    }
+  }
+
+  // Slice to get only the current page
+  const startIndex = (page - 1) * pageSize;
+  const paginatedData = allItems.slice(startIndex, startIndex + pageSize);
 
   const columns: ColumnDef<Product>[] = [
     { key: 'name', label: 'Product', sortable: true, searchable: true },
@@ -470,12 +500,10 @@ export default function ProductsPage() {
       key: 'price', 
       label: 'Price', 
       sortable: true,
-      render: (value) => `$${value.toFixed(2)}`
+      render: (value) => `$${(value as number).toFixed(2)}`
     },
     { key: 'stock', label: 'Stock', sortable: true },
   ];
-
-  if (!result) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto py-8 space-y-4">
@@ -483,25 +511,88 @@ export default function ProductsPage() {
       
       <SearchInput placeholder="Search products..." />
       
-      <DataTable
+      <DataTable<Product>
         columns={columns}
-        data={result.data}
-        totalCount={result.totalCount}
-        page={state.page}
-        pageSize={state.pageSize}
-        sortBy={state.sortBy}
-        sortOrder={state.sortOrder}
-        search={state.search}
+        data={paginatedData}
+        search={search}
       />
       
       <TablePagination
-        page={state.page}
-        pageSize={state.pageSize}
-        totalCount={result.totalCount}
+        page={page}
+        pageSize={pageSize}
+        totalCount={allItems.length}
       />
     </div>
   );
 }
+```
+
+**Note**: The example above shows how to adapt Convex's cursor-based pagination to a page-based UI. For better performance with large datasets, consider using a "Load More" button UI pattern that works naturally with Convex's cursor-based pagination:
+
+```tsx
+// Alternative: Load More pattern (better for large datasets)
+'use client';
+
+import { usePaginatedQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { DataTable } from '@axiom-labs/convex-table';
+import { SearchInput } from '@axiom-labs/convex-table/next';
+import { Button } from '@/components/ui/button';
+
+export default function ProductsPage() {
+  const [search, setSearch] = useState('');
+  
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.products.list,
+    { search: search || undefined },
+    { initialNumItems: 10 }
+  );
+
+  const columns = [
+    { key: 'name', label: 'Product', sortable: true, searchable: true },
+    { 
+      key: 'price', 
+      label: 'Price', 
+      render: (value) => `$${(value as number).toFixed(2)}`
+    },
+    { key: 'stock', label: 'Stock' },
+  ];
+
+  return (
+    <div className="container mx-auto py-8 space-y-4">
+      <h1 className="text-2xl font-bold">Products</h1>
+      
+      <SearchInput 
+        value={search}
+        onChange={setSearch}
+        placeholder="Search products..." 
+      />
+      
+      <DataTable columns={columns} data={results} search={search} />
+      
+      {status === 'CanLoadMore' && (
+        <Button onClick={() => loadMore(10)}>Load More</Button>
+      )}
+    </div>
+  );
+}
+```
+
+```typescript
+// convex/schema.ts
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  products: defineTable({
+    name: v.string(),
+    price: v.number(),
+    stock: v.number(),
+    description: v.optional(v.string()),
+  }).searchIndex("search_name", {
+    searchField: "name",
+  }),
+});
 ```
 
 ```typescript
@@ -511,254 +602,73 @@ import { v } from 'convex/values';
 
 export const list = query({
   args: {
-    page: v.number(),
-    pageSize: v.number(),
-    sortBy: v.optional(v.string()),
-    sortOrder: v.optional(v.union(v.literal('asc'), v.literal('desc'))),
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
     search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query('products');
-
-    // Apply search filter
-    if (args.search) {
-      query = query.filter((q) =>
-        q.or(
-          q.eq(q.field('name'), args.search),
-          // Add more searchable fields
-        )
-      );
+    // If search query provided, use search index
+    if (args.search && args.search.trim()) {
+      const results = await ctx.db
+        .query('products')
+        .withSearchIndex('search_name', (q) => q.search('name', args.search!))
+        .paginate(args.paginationOpts);
+      
+      return results;
     }
-
-    // Apply sorting
-    if (args.sortBy) {
-      query = query.order(args.sortOrder === 'desc' ? 'desc' : 'asc');
-    }
-
-    // Get total count
-    const allResults = await query.collect();
-    const totalCount = allResults.length;
-
-    // Apply pagination
-    const data = allResults.slice(
-      (args.page - 1) * args.pageSize,
-      args.page * args.pageSize
-    );
-
-    return { data, totalCount };
+    
+    // Otherwise, return all products with pagination
+    const results = await ctx.db
+      .query('products')
+      .order('desc')
+      .paginate(args.paginationOpts);
+    
+    return results;
   },
 });
 ```
 
-## Migration Guide
-
-### Breaking Changes from v1.x
-
-This is a major version update with breaking changes:
-
-1. **Entry points changed**: Components are now imported from framework-specific paths
-2. **shadcn/ui bundled**: No need to install shadcn/ui separately
-3. **Peer dependencies**: React and Next.js are now peer dependencies
-
-### Migration Steps
-
-#### Step 1: Update Installation
-
-```bash
-# Remove old version
-npm uninstall @axiom-labs/convex-table
-
-# Install new version with peer dependencies
-npm install @axiom-labs/convex-table react
-# For Next.js projects, also install:
-npm install next
-```
-
-#### Step 2: Update Imports
-
-**Before (v1.x):**
-```tsx
-import { DataTable, SearchInput, TablePagination } from '@axiom-labs/convex-table';
-```
-
-**After (v2.x) - React:**
-```tsx
-import { DataTable } from '@axiom-labs/convex-table';
-import { SearchInput, TablePagination } from '@axiom-labs/convex-table/react';
-```
-
-**After (v2.x) - Next.js:**
-```tsx
-import { DataTable } from '@axiom-labs/convex-table';
-import { SearchInput, TablePagination } from '@axiom-labs/convex-table/next';
-```
-
-#### Step 3: Update Component Usage (React Only)
-
-If you're using the React version, components now use a callback-based API:
-
-**Before (v1.x):**
-```tsx
-// Components managed their own state internally
-<SearchInput />
-<TablePagination totalCount={100} />
-```
-
-**After (v2.x):**
-```tsx
-// You control the state
-const [search, setSearch] = useState('');
-const [page, setPage] = useState(1);
-
-<SearchInput value={search} onChange={setSearch} />
-<TablePagination 
-  page={page}
-  pageSize={10}
-  totalCount={100}
-  onPageChange={setPage}
-/>
-```
-
-Or use the `useTableState` hook:
-
-```tsx
-const { state, actions } = useTableState();
-
-<SearchInput value={state.search || ''} onChange={actions.setSearch} />
-<TablePagination 
-  page={state.page}
-  pageSize={state.pageSize}
-  totalCount={100}
-  onPageChange={actions.setPage}
-/>
-```
-
-#### Step 4: Configure Tailwind CSS
-
-Add the package to your Tailwind content configuration:
-
-```js
-// tailwind.config.js
-module.exports = {
-  content: [
-    // ... your existing content paths
-    './node_modules/@axiom-labs/convex-table/**/*.{js,ts,jsx,tsx}',
-  ],
-  // ... rest of config
-}
-```
-
-Add required CSS variables to your global CSS (see Tailwind CSS Configuration section above).
-
-#### Step 5: Test Your Application
-
-1. Verify all imports resolve correctly
-2. Test table functionality (sorting, pagination, search)
-3. For Next.js: Verify URL synchronization works
-4. Check that styling appears correctly
-
-### Complete Migration Example
-
-**Before (v1.x):**
-```tsx
-import { DataTable, SearchInput, TablePagination } from '@axiom-labs/convex-table';
-
-export function MyTable({ data }) {
-  return (
-    <div>
-      <SearchInput />
-      <DataTable columns={columns} data={data} totalCount={data.length} />
-      <TablePagination totalCount={data.length} />
-    </div>
-  );
-}
-```
-
-**After (v2.x) - React:**
-```tsx
-import { DataTable } from '@axiom-labs/convex-table';
-import { SearchInput, TablePagination, useTableState } from '@axiom-labs/convex-table/react';
-
-export function MyTable({ data }) {
-  const { state, actions } = useTableState();
-  
-  // Apply filtering and pagination to your data
-  const filteredData = state.search
-    ? data.filter(item => /* your filter logic */)
-    : data;
-  
-  const paginatedData = filteredData.slice(
-    (state.page - 1) * state.pageSize,
-    state.page * state.pageSize
-  );
-
-  return (
-    <div>
-      <SearchInput value={state.search || ''} onChange={actions.setSearch} />
-      <DataTable 
-        columns={columns} 
-        data={paginatedData} 
-        totalCount={filteredData.length}
-        page={state.page}
-        pageSize={state.pageSize}
-        sortBy={state.sortBy}
-        sortOrder={state.sortOrder}
-      />
-      <TablePagination 
-        page={state.page}
-        pageSize={state.pageSize}
-        totalCount={filteredData.length}
-        onPageChange={actions.setPage}
-        onPageSizeChange={actions.setPageSize}
-      />
-    </div>
-  );
-}
-```
-
-**After (v2.x) - Next.js:**
-```tsx
-import { DataTable } from '@axiom-labs/convex-table';
-import { SearchInput, TablePagination } from '@axiom-labs/convex-table/next';
-
-// Next.js components automatically sync with URL
-export function MyTable({ data, searchParams }) {
-  const page = Number(searchParams.page) || 1;
-  const pageSize = Number(searchParams.pageSize) || 10;
-  const search = searchParams.search || '';
-  
-  // Apply filtering and pagination
-  const filteredData = search
-    ? data.filter(item => /* your filter logic */)
-    : data;
-  
-  const paginatedData = filteredData.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
-
-  return (
-    <div>
-      <SearchInput />
-      <DataTable 
-        columns={columns} 
-        data={paginatedData} 
-        totalCount={filteredData.length}
-        page={page}
-        pageSize={pageSize}
-        search={search}
-      />
-      <TablePagination 
-        page={page}
-        pageSize={pageSize}
-        totalCount={filteredData.length}
-      />
-    </div>
-  );
-}
-```
-
 ## API Reference
+
+### DataTable Component
+
+The `DataTable` component is a generic component that requires a type parameter for proper type inference:
+
+```tsx
+<DataTable<YourDataType>
+  columns={columns}
+  data={data}
+  search={searchQuery}  // optional
+/>
+```
+
+**Props:**
+- `columns`: Array of column definitions
+- `data`: Array of row data to display (pre-filtered and pre-sorted)
+- `search`: Optional search query string (used for empty state message)
+
+**Important**: 
+- Always specify the generic type parameter (e.g., `<User>`, `<Product>`) when using `DataTable` to ensure proper type checking for your columns and data.
+- Your data type must extend `Record<string, unknown>` or have an index signature. For example:
+
+```tsx
+// Option 1: Extend Record<string, unknown>
+interface User extends Record<string, unknown> {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// Option 2: Add index signature
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  [key: string]: unknown;
+}
+```
 
 ### Types
 

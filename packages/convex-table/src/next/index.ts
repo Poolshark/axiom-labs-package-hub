@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Next.js Entry Point
  *

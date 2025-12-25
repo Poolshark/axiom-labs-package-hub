@@ -35,7 +35,7 @@ export function TablePagination({
 	const goToPage = (newPage: number) => {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("page", String(newPage));
-		router.push(`?${params.toString()}`);
+		router.push(`?${params.toString()}`, { scroll: false });
 	};
 
 	/**

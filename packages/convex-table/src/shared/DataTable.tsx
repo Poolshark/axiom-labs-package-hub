@@ -18,8 +18,6 @@ import type { DataTableProps } from "./types";
 export function DataTable<T extends Record<string, unknown>>({
 	columns,
 	data,
-	sortBy,
-	sortOrder,
 	search,
 }: DataTableProps<T>) {
 	// Display empty state when no data

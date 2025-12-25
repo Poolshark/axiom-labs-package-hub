@@ -25,18 +25,31 @@ import type { SearchInputProps } from "../shared/types";
  * - Resets page to 1 when search query changes
  * - Provides clear button to reset search
  *
- * @param props - SearchInput props including initial value
+ * @param props - SearchInput props including initial value and placeholder
  */
-export function SearchInput({ initialValue = "" }: SearchInputProps) {
+export function SearchInput({
+	initialValue = "",
+	placeholder = "Search...",
+}: SearchInputProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const [searchValue, setSearchValue] = useState(initialValue);
+
+	// Initialize from URL if no initialValue provided
+	const urlSearch = searchParams.get("search") || "";
+	const [searchValue, setSearchValue] = useState(initialValue || urlSearch);
 
 	/**
 	 * Debounced effect to update URL parameters
 	 * Waits 500ms after user stops typing before updating URL
 	 */
 	useEffect(() => {
+		const currentUrlSearch = searchParams.get("search") || "";
+
+		// Only update URL if the value actually changed
+		if (searchValue === currentUrlSearch) {
+			return;
+		}
+
 		const timeoutId = setTimeout(() => {
 			const params = new URLSearchParams(searchParams.toString());
 
@@ -50,7 +63,7 @@ export function SearchInput({ initialValue = "" }: SearchInputProps) {
 				params.delete("search");
 			}
 
-			router.push(`?${params.toString()}`);
+			router.push(`?${params.toString()}`, { scroll: false });
 		}, 500);
 
 		// Cleanup timeout on unmount or when dependencies change
@@ -61,7 +74,7 @@ export function SearchInput({ initialValue = "" }: SearchInputProps) {
 	 * Handle input change
 	 */
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setSearchValue(e.currentTarget.value);
+		setSearchValue(e.target.value);
 	};
 
 	/**
@@ -75,7 +88,7 @@ export function SearchInput({ initialValue = "" }: SearchInputProps) {
 		<div className="flex items-center gap-2">
 			<Input
 				type="text"
-				placeholder="Search..."
+				placeholder={placeholder}
 				value={searchValue}
 				onChange={handleChange}
 				className="max-w-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

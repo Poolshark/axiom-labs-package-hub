@@ -22,6 +22,10 @@
 			"require": "./dist/index.cjs",
 			"import": "./dist/index.mjs"
 		},
+		"./convex": {
+			"require": "./dist/convex.cjs",
+			"import": "./dist/convex.mjs"
+		},
 		"./next": {
 			"require": "./dist/next.cjs",
 			"import": "./dist/next.mjs"

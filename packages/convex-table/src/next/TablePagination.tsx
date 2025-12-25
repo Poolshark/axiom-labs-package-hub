@@ -56,7 +56,6 @@ export function TablePagination(props: TablePaginationProps) {
 		<div className="flex items-center justify-between px-2 py-4">
 			<output className="text-muted-foreground text-sm" aria-live="polite">
 				Page {currentPage} of {maxPageReached}
-				{hasMore ? "+" : ""}
 			</output>
 			<div className="flex items-center gap-2">
 				<Button

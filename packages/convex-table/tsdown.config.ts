@@ -1,8 +1,13 @@
-import { defineConfig } from 'tsdown';
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ['./src/index.tsx'],
-  format: ['esm', 'cjs'],
-  clean: true,
-  dts: true,
+	entry: {
+		index: "./src/index.ts",
+		react: "./src/react.ts",
+		next: "./src/next.ts",
+	},
+	format: ["esm", "cjs"],
+	dts: true,
+	exports: true,
+	clean: true,
 });

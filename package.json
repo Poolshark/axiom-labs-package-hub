@@ -1,10 +1,21 @@
 {
-  "name": "package-dev-monorepo",
-  "type": "module",
-  "private": true,
-  "workspaces": ["packages/*", "apps/*"],
-  "devDependencies": {
-    "@biomejs/biome": "^2.3.10",
-    "@types/bun": "latest"
-  }
+	"name": "package-dev-monorepo",
+	"description": "This monorepo serves a a development/testbed for package development.",
+	"version": "0.0.1",
+	"author": {
+		"name": "Flo Ragossnig",
+		"email": "flo.ragossnig@icloud.com",
+		"url": "https://poolshark.github.io"
+	},
+	"license": "MIT",
+	"type": "module",
+	"private": true,
+	"workspaces": [
+		"packages/*",
+		"apps/*"
+	],
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.10",
+		"@types/bun": "latest"
+	}
 }

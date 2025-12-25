@@ -7,6 +7,15 @@
 		"email": "flo.ragossnig@icloud.com",
 		"url": "https://poolshark.github.io"
 	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Poolshark/axiom-labs-package-hub.git",
+		"directory": "packages/convex-table"
+	},
+	"bugs": {
+		"url": "https://github.com/Poolshark/axiom-labs-package-hub/issues"
+	},
+	"homepage": "https://github.com/Poolshark/axiom-labs-package-hub/tree/main/packages/convex-table#readme",
 	"type": "module",
 	"exports": {
 		".": {

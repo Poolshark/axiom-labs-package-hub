@@ -11,7 +11,6 @@ export type {
 	SearchInputProps,
 	TableHeaderProps,
 	TablePaginationProps,
-	TableQueryResult,
 	TableSearchParams,
 	TableState,
 	TypedColumnDef,

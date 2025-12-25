@@ -7,7 +7,6 @@ export type {
 	ColumnDef,
 	ColumnMetadata,
 	DataTableProps,
-	TableQueryResult,
 	TypedColumnDef,
 } from "../shared/types";
 export type { SearchInputProps } from "./SearchInput";

@@ -42,22 +42,13 @@ export type DataTableProps<T> = {
 };
 
 /**
- * Result structure returned by Convex table queries
- * @template T - The type of row data
- */
-export type TableQueryResult<T> = {
-	/** Array of data records for the current page */
-	data: T[];
-	/** Total count of records matching the query (across all pages) */
-	totalCount: number;
-};
-
-/**
- * URL search parameters for table state
+ * URL search parameters for table state (Convex cursor-based pagination)
  */
 export type TableSearchParams = {
-	/** Current page number (1-indexed) */
+	/** Current page number (1-indexed) for cursor history tracking */
 	page?: string;
+	/** Comma-separated cursor history */
+	cursors?: string;
 	/** Number of items per page */
 	pageSize?: string;
 	/** Column key to sort by */
@@ -66,16 +57,16 @@ export type TableSearchParams = {
 	sortOrder?: "asc" | "desc";
 	/** Search query string */
 	search?: string;
-	/** Cursor for cursor-based pagination (Convex) */
-	cursor?: string;
 };
 
 /**
- * Parsed and validated table state
+ * Parsed and validated table state (Convex cursor-based pagination)
  */
 export type TableState = {
 	/** Current page number (1-indexed, minimum 1) */
 	page: number;
+	/** Comma-separated cursor history */
+	cursors: string;
 	/** Number of items per page (minimum 1) */
 	pageSize: number;
 	/** Column key to sort by */
@@ -84,8 +75,6 @@ export type TableState = {
 	sortOrder: "asc" | "desc";
 	/** Search query string */
 	search?: string;
-	/** Cursor for cursor-based pagination */
-	cursor?: string;
 };
 
 /**
@@ -113,25 +102,9 @@ export type TableHeaderProps = {
 };
 
 /**
- * Props for page-based pagination (traditional pagination with page numbers)
+ * Props for TablePagination component (Convex cursor-based pagination only)
  */
-export type PageBasedPaginationProps = {
-	/** Pagination mode */
-	mode: "page";
-	/** Current page number (1-indexed) */
-	page: number;
-	/** Number of items per page */
-	pageSize: number;
-	/** Total count of records */
-	totalCount: number;
-};
-
-/**
- * Props for cursor-based pagination (Convex-style pagination)
- */
-export type CursorBasedPaginationProps = {
-	/** Pagination mode */
-	mode: "cursor";
+export type TablePaginationProps = {
 	/** Whether there are more results available */
 	hasMore: boolean;
 	/** The cursor for the next page (from Convex continueCursor) */
@@ -143,14 +116,6 @@ export type CursorBasedPaginationProps = {
 	/** Highest page number reached so far */
 	maxPageReached: number;
 };
-
-/**
- * Props for TablePagination component
- * Supports both page-based and cursor-based pagination
- */
-export type TablePaginationProps =
-	| PageBasedPaginationProps
-	| CursorBasedPaginationProps;
 
 /**
  * Props for SearchInput component

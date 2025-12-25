@@ -3,55 +3,66 @@
 import { Button } from "../components/ui/button";
 
 export interface TablePaginationProps {
-	/** Current page (1-indexed) */
-	page: number;
-	/** Items per page */
-	pageSize: number;
-	/** Total number of items */
-	totalCount: number;
-	/** Callback when page changes */
-	onPageChange: (page: number) => void;
-	/** Callback when page size changes */
-	onPageSizeChange?: (pageSize: number) => void;
+	/** Whether there are more results available */
+	hasMore: boolean;
+	/** The cursor for the next page (from Convex continueCursor) */
+	nextCursor: string | null;
+	/** Current cursor (null for first page) */
+	currentCursor?: string | null;
+	/** Current page number (1-indexed) */
+	currentPage: number;
+	/** Highest page number reached so far */
+	maxPageReached: number;
+	/** Callback when navigating to first page */
+	onFirstPage: () => void;
+	/** Callback when navigating to previous page */
+	onPreviousPage: () => void;
+	/** Callback when navigating to next page */
+	onNextPage: () => void;
 }
 
 export function TablePagination({
-	page,
-	pageSize,
-	totalCount,
-	onPageChange,
-	// onPageSizeChange is optional and reserved for future use
-	onPageSizeChange: _onPageSizeChange,
+	hasMore,
+	nextCursor: _nextCursor,
+	currentPage,
+	maxPageReached,
+	onFirstPage,
+	onPreviousPage,
+	onNextPage,
 }: TablePaginationProps) {
-	const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-	const canGoPrevious = page > 1;
-	const canGoNext = page < totalPages;
-
-	const startItem = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-	const endItem = Math.min(page * pageSize, totalCount);
+	const canGoPrevious = currentPage > 1;
+	const canGoNext = hasMore && currentPage < maxPageReached;
+	const canGoFirst = currentPage > 1;
 
 	return (
 		<div className="flex items-center justify-between px-2 py-4">
 			<div className="text-sm text-muted-foreground">
-				Showing {startItem} to {endItem} of {totalCount} results
+				Page {currentPage} of {maxPageReached}
+				{hasMore && "+"}
 			</div>
 			<div className="flex items-center gap-2">
 				<Button
 					variant="outline"
 					size="sm"
-					onClick={() => onPageChange(page - 1)}
+					onClick={onFirstPage}
+					disabled={!canGoFirst}
+					aria-label="Go to first page"
+				>
+					First
+				</Button>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={onPreviousPage}
 					disabled={!canGoPrevious}
 					aria-label="Go to previous page"
 				>
 					Previous
 				</Button>
-				<div className="text-sm">
-					Page {page} of {totalPages}
-				</div>
 				<Button
 					variant="outline"
 					size="sm"
-					onClick={() => onPageChange(page + 1)}
+					onClick={onNextPage}
 					disabled={!canGoNext}
 					aria-label="Go to next page"
 				>

@@ -79,7 +79,6 @@ export default async function ConvexTable({
 			<DataTable<User> columns={columns} data={users.page} search={search} />
 
 			<TablePagination
-				mode="cursor"
 				hasMore={!users.isDone}
 				nextCursor={users.continueCursor}
 				currentCursor={cursor}

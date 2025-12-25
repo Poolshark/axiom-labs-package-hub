@@ -31,7 +31,7 @@ export function TablePagination({
 	onNextPage,
 }: TablePaginationProps) {
 	const canGoPrevious = currentPage > 1;
-	const canGoNext = hasMore && currentPage < maxPageReached;
+	const canGoNext = hasMore || currentPage < maxPageReached;
 	const canGoFirst = currentPage > 1;
 
 	return (

@@ -83,31 +83,40 @@ export function TablePagination(props: TablePaginationProps) {
 	}
 
 	// Render cursor-based pagination (Convex)
-	const { hasMore, nextCursor, currentCursor } = props;
-	const isFirstPage = !currentCursor;
+	const { hasMore, currentPage, maxPageReached } = props;
+	const isFirstPage = currentPage === 1;
 
-	const goToFirst = () => {
+	const goToPage = (newPage: number) => {
 		const params = new URLSearchParams(searchParams.toString());
-		params.delete("cursor");
-		// Remove page if it exists (switching from page to cursor mode)
-		params.delete("page");
+		params.set("page", String(newPage));
 		router.push(`?${params.toString()}`, { scroll: false });
 	};
 
-	const goToNext = () => {
-		if (hasMore && nextCursor) {
-			const params = new URLSearchParams(searchParams.toString());
-			params.set("cursor", nextCursor);
-			// Remove page if it exists (switching from page to cursor mode)
-			params.delete("page");
-			router.push(`?${params.toString()}`, { scroll: false });
+	const goToFirst = () => {
+		goToPage(1);
+	};
+
+	const goToPrevious = () => {
+		if (currentPage > 1) {
+			goToPage(currentPage - 1);
 		}
 	};
+
+	const goToNext = () => {
+		// Only allow going to next page if:
+		// 1. We have more data (hasMore), OR
+		// 2. We haven't reached the max page yet (can navigate to already-visited pages)
+		if (hasMore || currentPage < maxPageReached) {
+			goToPage(currentPage + 1);
+		}
+	};
+
+	const canGoNext = hasMore || currentPage < maxPageReached;
 
 	return (
 		<div className="flex items-center justify-between px-2 py-4">
 			<output className="text-muted-foreground text-sm" aria-live="polite">
-				{isFirstPage ? "First page" : "Viewing results"}
+				Page {currentPage} of {maxPageReached}
 			</output>
 			<div className="flex items-center gap-2">
 				<Button
@@ -123,8 +132,18 @@ export function TablePagination(props: TablePaginationProps) {
 				<Button
 					variant="outline"
 					size="sm"
+					onClick={goToPrevious}
+					disabled={isFirstPage}
+					aria-label="Go to previous page"
+					className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					Previous
+				</Button>
+				<Button
+					variant="outline"
+					size="sm"
 					onClick={goToNext}
-					disabled={!hasMore}
+					disabled={!canGoNext}
 					aria-label="Go to next page"
 					className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				>

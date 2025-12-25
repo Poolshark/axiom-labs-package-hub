@@ -138,6 +138,10 @@ export type CursorBasedPaginationProps = {
 	nextCursor: string | null;
 	/** Current cursor (null for first page) */
 	currentCursor?: string | null;
+	/** Current page number (1-indexed) */
+	currentPage: number;
+	/** Highest page number reached so far */
+	maxPageReached: number;
 };
 
 /**

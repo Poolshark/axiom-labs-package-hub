@@ -14,20 +14,20 @@ export default async function ConvexTable({
 	searchParams,
 }: {
 	searchParams: Promise<{
-		page?: string;
+		cursor?: string;
 		pageSize?: string;
 		search?: string;
 	}>;
 }) {
 	const params = await searchParams;
-	const page = Number(params.page) || 1;
 	const pageSize = Number(params.pageSize) || 10;
 	const search = params.search || "";
+	const cursor = params.cursor || null;
 
 	const users = await fetchQuery(api.users.list, {
 		paginationOpts: {
 			numItems: pageSize,
-			cursor: null, // Always start from beginning for now
+			cursor: cursor,
 		},
 		search: search || undefined,
 	});
@@ -44,7 +44,12 @@ export default async function ConvexTable({
 
 			<DataTable<User> columns={columns} data={users.page} search={search} />
 
-			<TablePagination page={page} pageSize={pageSize} totalCount={25} />
+			<TablePagination
+				mode="cursor"
+				hasMore={!users.isDone}
+				nextCursor={users.continueCursor}
+				currentCursor={cursor}
+			/>
 		</div>
 	);
 }

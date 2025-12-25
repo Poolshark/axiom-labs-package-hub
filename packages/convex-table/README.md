@@ -9,6 +9,7 @@ A flexible, type-safe table component library for React and Next.js applications
 - 🎨 **Styled Components**: Bundled shadcn/ui components (no external setup required)
 - 🔗 **URL Synchronization**: Next.js version syncs table state with URL parameters
 - 🎛️ **Flexible State Management**: React version works with any state management solution
+- 📄 **Dual Pagination Modes**: Supports both page-based and cursor-based pagination (Convex)
 - ♿ **Accessible**: WCAG 2.1 AA compliant with proper ARIA labels and keyboard navigation
 - 📦 **Tree-Shakeable**: Import only what you need
 
@@ -67,7 +68,7 @@ Components accept state and callbacks as props, giving you full control over sta
 Components automatically sync with URL search parameters:
 - `SearchInput` - Syncs search query to URL
 - `TableHeader` - Syncs sort state to URL
-- `TablePagination` - Syncs page/pageSize to URL
+- `TablePagination` - Syncs pagination to URL (supports both page-based and cursor-based modes)
 - `useTableState` - Hook that reads/writes URL parameters
 
 **Key characteristics**:
@@ -689,7 +690,100 @@ type TableState = {
   sortBy?: string;
   sortOrder: 'asc' | 'desc';
   search?: string;
+  cursor?: string; // For cursor-based pagination
 };
+
+// TablePagination props (discriminated union)
+type TablePaginationProps =
+  | {
+      mode: 'page';
+      page: number;
+      pageSize: number;
+      totalCount: number;
+    }
+  | {
+      mode: 'cursor';
+      hasMore: boolean;
+      nextCursor: string | null;
+      currentCursor?: string | null;
+    };
+```
+
+## Pagination Modes
+
+The `TablePagination` component supports two pagination modes:
+
+### Page-Based Pagination (Traditional)
+
+Use this mode for traditional page numbers (1, 2, 3...):
+
+```tsx
+<TablePagination
+  mode="page"
+  page={1}
+  pageSize={10}
+  totalCount={100}
+/>
+```
+
+**Best for:**
+- Small to medium datasets
+- When you need to show total page count
+- When users need to jump to specific pages
+
+### Cursor-Based Pagination (Convex)
+
+Use this mode with Convex's built-in `.paginate()` method:
+
+```tsx
+<TablePagination
+  mode="cursor"
+  hasMore={!result.isDone}
+  nextCursor={result.continueCursor}
+  currentCursor={cursor}
+/>
+```
+
+**Best for:**
+- Large datasets
+- Convex database queries
+- When data changes frequently
+- Better performance (no need to count total items)
+
+**Example with Convex:**
+
+```tsx
+// app/users/page.tsx
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cursor?: string; search?: string }>;
+}) {
+  const params = await searchParams;
+  const cursor = params.cursor || null;
+  const search = params.search || '';
+
+  const users = await fetchQuery(api.users.list, {
+    paginationOpts: {
+      numItems: 10,
+      cursor: cursor,
+    },
+    search: search || undefined,
+  });
+
+  return (
+    <div>
+      <SearchInput placeholder="Search..." />
+      <DataTable columns={columns} data={users.page} />
+      <TablePagination
+        mode="cursor"
+        hasMore={!users.isDone}
+        nextCursor={users.continueCursor}
+        currentCursor={cursor}
+      />
+    </div>
+  );
+}
 ```
 
 ### Components
